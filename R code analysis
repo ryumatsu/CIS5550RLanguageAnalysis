@@ -1,0 +1,376 @@
+# Temporal trends
+
+# Load the data  
+
+airbnb_data <- read_excel("data/AirbnbLA_2023--Cleaned.xlsx") 
+
+ 
+
+# Categorize listings by recent review frequency 
+
+airbnb_data <- airbnb_data %>% 
+
+  mutate(RecentReviewsCategory = ifelse(NumberOfReviewsL30D > 10, "High", "Low")) 
+
+ 
+
+# Calculate average review scores for each category 
+
+review_summary <- airbnb_data %>% 
+
+  group_by(RecentReviewsCategory) %>% 
+
+  summarize(AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE)) 
+
+print(review_summary) 
+
+
+## new section
+# Redefine "New" listings with a 360-day threshold 
+
+airbnb_data <- airbnb_data %>% 
+
+  mutate(ListingAgeCategory = ifelse(DaysSinceListing < 360, "New", "Old")) 
+
+ 
+
+# Calculate average reviews for new vs. old listings 
+
+new_old_reviews <- airbnb_data %>% 
+
+  group_by(ListingAgeCategory) %>% 
+
+  summarize(AverageReviewsL30D = mean(NumberOfReviewsL30D, na.rm = TRUE), 
+
+            AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE)) 
+
+ 
+
+print(new_old_reviews) 
+
+  summarize(AverageReviewsL30D = mean(NumberOfReviewsL30D, na.rm = TRUE), 
+
+            AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE)) 
+
+ 
+
+print(new_old_reviews) 
+
+
+## new section
+
+library(ggplot2) 
+
+ 
+
+# Bar chart for Average Review Score by Listing Age Category 
+
+ggplot(new_old_reviews, aes(x = ListingAgeCategory, y = AverageReviewScore, fill = ListingAgeCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Review Score by Listing Age Category", 
+
+       x = "Listing Age Category (New vs. Old)", 
+
+       y = "Average Review Score") + 
+
+  theme_minimal() 
+
+ 
+
+# Bar chart for Average Reviews in Last 30 Days by Listing Age Category 
+
+ggplot(new_old_reviews, aes(x = ListingAgeCategory, y = AverageReviewsL30D, fill = ListingAgeCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Reviews in Last 30 Days by Listing Age Category", 
+
+       x = "Listing Age Category (New vs. Old)", 
+
+       y = "Average Reviews in Last 30 Days") + 
+
+  theme_minimal() 
+
+## new section
+
+# Group by InstantBookable to approximate flexibility 
+
+instant_bookable_summary <- airbnb_data %>% 
+
+  group_by(InstantBookable) %>% 
+
+  summarize(AverageNumberOfReviews = mean(NumberOfReviews, na.rm = TRUE), 
+
+            AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE)) 
+
+ 
+
+print(instant_bookable_summary) 
+
+##new section
+
+# Categorize listings based on minimum night requirement for flexibility 
+
+airbnb_data <- airbnb_data %>% 
+
+  mutate(MinimumNightsCategory = ifelse(MinimumNights <= 2, "Short Stay", "Long Stay")) 
+
+ 
+
+# Group by MinimumNightsCategory to analyze flexibility impact 
+
+min_nights_summary <- airbnb_data %>% 
+
+  group_by(MinimumNightsCategory) %>% 
+
+  summarize(AverageNumberOfReviews = mean(NumberOfReviews, na.rm = TRUE), 
+
+            AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE)) 
+
+ 
+
+print(min_nights_summary) 
+
+## new section
+# Analyze value perception impact on overall review scores 
+
+value_score_summary <- airbnb_data %>% 
+
+  summarize(AverageReviewScore = mean(ReviewScoresRating, na.rm = TRUE), 
+
+            AverageValueScore = mean(ReviewScoresValue, na.rm = TRUE), 
+
+            AverageNumberOfReviews = mean(NumberOfReviews, na.rm = TRUE)) 
+
+ 
+
+print(value_score_summary) 
+
+Visuals 
+
+##Average Review Score by Instant Bookable Status 
+
+ggplot(instant_bookable_summary, aes(x = as.factor(InstantBookable), y = AverageReviewScore, fill = as.factor(InstantBookable))) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Review Score by Instant Bookable Status", 
+
+       x = "Instant Bookable (0 = No, 1 = Yes)", 
+
+       y = "Average Review Score") + 
+
+  theme_minimal() 
+
+ 
+
+##Average Number of Reviews by Instant Bookable Status 
+
+ggplot(instant_bookable_summary, aes(x = as.factor(InstantBookable), y = AverageNumberOfReviews, fill = as.factor(InstantBookable))) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Number of Reviews by Instant Bookable Status", 
+
+       x = "Instant Bookable (0 = No, 1 = Yes)", 
+
+       y = "Average Number of Reviews") + 
+
+  theme_minimal() 
+
+ 
+
+##Average Review Score by Minimum Nights Requirement 
+
+ggplot(min_nights_summary, aes(x = MinimumNightsCategory, y = AverageReviewScore, fill = MinimumNightsCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Review Score by Minimum Nights Requirement", 
+
+       x = "Minimum Nights Requirement (Short Stay vs. Long Stay)", 
+
+       y = "Average Review Score") + 
+
+  theme_minimal() 
+
+ 
+
+##Average Number of Reviews by Minimum Nights Requirement 
+
+ggplot(min_nights_summary, aes(x = MinimumNightsCategory, y = AverageNumberOfReviews, fill = MinimumNightsCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Average Number of Reviews by Minimum Nights Requirement", 
+
+       x = "Minimum Nights Requirement (Short Stay vs. Long Stay)", 
+
+       y = "Average Number of Reviews") + 
+
+  theme_minimal() 
+
+ 
+
+##Average Review Score vs. Average Value Score 
+
+##This visualization compares value scores with review scores to highlight the alignment in perceived value and overall satisfaction. 
+
+# Create a comparison bar chart for Review and Value Scores 
+
+ggplot(value_score_summary, aes(x = "", y = AverageReviewScore, fill = "Review Score")) + 
+
+  geom_bar(stat = "identity", position = "dodge") + 
+
+  geom_bar(aes(y = AverageValueScore, fill = "Value Score"), stat = "identity", position = "dodge") + 
+
+  labs(title = "Average Review Score vs. Average Value Score", 
+
+       x = "Review vs. Value", 
+
+       y = "Score") + 
+
+  scale_fill_manual(name = "Score Type", values = c("Review Score" = "skyblue", "Value Score" = "orange")) + 
+
+  theme_minimal() 
+
+##new section
+# Define positive reviews based on a threshold (e.g., 4.5) 
+
+airbnb_data <- airbnb_data %>% 
+
+  mutate(IsPositiveReview = ifelse(ReviewScoresRating >= 4.5, 1, 0)) 
+
+ 
+
+# Calculate positive review rate by InstantBookable status 
+
+instant_bookable_positive <- airbnb_data %>% 
+
+  group_by(InstantBookable) %>% 
+
+  summarize(PositiveReviewRate = mean(IsPositiveReview, na.rm = TRUE), 
+
+            TotalReviews = n()) 
+
+print(instant_bookable_positive) 
+
+##Calculate Positive Review Rates by Minimum Nights Category 
+
+# Calculate positive review rate by MinimumNightsCategory 
+
+min_nights_positive <- airbnb_data %>% 
+
+  group_by(MinimumNightsCategory) %>% 
+
+  summarize(PositiveReviewRate = mean(IsPositiveReview, na.rm = TRUE), 
+
+            TotalReviews = n()) 
+
+ 
+
+print(min_nights_positive) 
+
+##Calculate Positive Review Rates by Value Score 
+
+# Calculate positive review rate based on value perception 
+
+# For this, we categorize listings with high value scores as flexible in terms of perceived value 
+
+airbnb_data <- airbnb_data %>% 
+
+  mutate(ValueCategory = ifelse(ReviewScoresValue >= 4.5, "High Value", "Low Value")) 
+
+ 
+
+value_positive <- airbnb_data %>% 
+
+  group_by(ValueCategory) %>% 
+
+  summarize(PositiveReviewRate = mean(IsPositiveReview, na.rm = TRUE), 
+
+            TotalReviews = n()) 
+
+ 
+
+print(value_positive) 
+
+# Bar chart for Positive Review Rate by Instant Bookable Status 
+
+ggplot(instant_bookable_positive, aes(x = as.factor(InstantBookable), y = PositiveReviewRate, fill = as.factor(InstantBookable))) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Positive Review Rate by Instant Bookable Status", 
+
+       x = "Instant Bookable (0 = No, 1 = Yes)", 
+
+       y = "Positive Review Rate") + 
+
+  scale_fill_manual(values = c("0" = "skyblue", "1" = "lightcoral")) + 
+
+  theme_minimal() 
+
+ 
+
+ 
+
+##Visualization 2: Positive Review Rate by Minimum Nights Requirement 
+
+##This chart will compare the positive review rates for listings with short vs. long minimum stay requirements. 
+
+# Bar chart for Positive Review Rate by Minimum Nights Requirement 
+
+ggplot(min_nights_positive, aes(x = MinimumNightsCategory, y = PositiveReviewRate, fill = MinimumNightsCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Positive Review Rate by Minimum Nights Requirement", 
+
+       x = "Minimum Nights Requirement (Short Stay vs. Long Stay)", 
+
+       y = "Positive Review Rate") + 
+
+  scale_fill_manual(values = c("Short Stay" = "lightgreen", "Long Stay" = "lightblue")) + 
+
+  theme_minimal() 
+
+ 
+
+ 
+
+##Visualization 3: Positive Review Rate by Value Category 
+
+##This chart will display the positive review rates for high-value vs. low-value listings, emphasizing the substantial difference in positive feedback based on perceived value. 
+
+# Bar chart for Positive Review Rate by Value Perception 
+
+ggplot(value_positive, aes(x = ValueCategory, y = PositiveReviewRate, fill = ValueCategory)) + 
+
+  geom_bar(stat = "identity") + 
+
+  labs(title = "Positive Review Rate by Value Perception", 
+
+       x = "Value Category (High vs. Low)", 
+
+       y = "Positive Review Rate") + 
+
+  scale_fill_manual(values = c("High Value" = "gold", "Low Value" = "gray")) + 
+
+  theme_minimal() 
+
+
+
+##Interpretation of Visualizations 
+
+##These visualizations will clearly show: 
+
+##Instant Bookable Status: Non-instant bookings lead to higher positive review rates. 
+
+##Minimum Nights Requirement: Shorter stays have a slight advantage in positive review rates. 
+
+##Value Perception: High-value listings have a much higher positive review rate, illustrating that perceived value strongly influences guest satisfaction. 
+
+##These visualizations will help to visually reinforce that perceived value is the most significant factor in positive feedback, with booking flexibility also playing a role. 
